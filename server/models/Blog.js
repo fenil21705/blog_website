@@ -8,11 +8,11 @@ const Blog = sequelize.define('Blog', {
         primaryKey: true,
     },
     title: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
     },
     slug: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
         unique: true,
     },
@@ -25,11 +25,11 @@ const Blog = sequelize.define('Blog', {
         allowNull: true,
     },
     featuredImage: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true,
     },
     category: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
     },
     categoryId: {
