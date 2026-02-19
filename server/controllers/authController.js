@@ -188,7 +188,7 @@ exports.seedDatabase = async (req, res) => {
     const { Category, Blog, sequelize } = require('../models');
     try {
         console.log('Syncing database for seed...');
-        await sequelize.sync();
+        await sequelize.sync({ alter: true });
 
         // 1. Create Categories
         const categories = [

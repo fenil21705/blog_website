@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
-    sequelize.sync()
+    sequelize.sync({ alter: true })
         .then(() => {
             console.log('Database synced');
             app.listen(PORT, () => {
