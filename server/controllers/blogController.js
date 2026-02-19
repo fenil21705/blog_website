@@ -38,7 +38,7 @@ exports.getBlogBySlug = async (req, res) => {
 };
 
 exports.createBlog = async (req, res) => {
-    const { title, content, excerpt, featuredImage, category, status } = req.body;
+    const { title, content, excerpt, featuredImage, category, categoryId, status } = req.body;
     const slug = title.toLowerCase().split(' ').join('-') + '-' + Date.now();
 
     try {
@@ -46,14 +46,16 @@ exports.createBlog = async (req, res) => {
             title,
             slug,
             content,
-            excerpt,
-            featuredImage,
+            excerpt: excerpt || null,
+            featuredImage: featuredImage || null,
             category,
-            status,
+            categoryId: categoryId || null,
+            status: status || 'draft',
             authorId: req.user.id,
         });
         res.status(201).json(blog);
     } catch (error) {
+        console.error('Error creating blog:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -62,12 +64,19 @@ exports.updateBlog = async (req, res) => {
     try {
         const blog = await Blog.findByPk(req.params.id);
         if (blog) {
-            await blog.update(req.body);
+            const updateData = { ...req.body };
+            // Ensure empty strings are treated as null for UUID/URL fields
+            if (updateData.categoryId === '') updateData.categoryId = null;
+            if (updateData.featuredImage === '') updateData.featuredImage = null;
+            if (updateData.excerpt === '') updateData.excerpt = null;
+
+            await blog.update(updateData);
             res.json(blog);
         } else {
             res.status(404).json({ message: 'Blog not found' });
         }
     } catch (error) {
+        console.error('Error updating blog:', error);
         res.status(500).json({ message: error.message });
     }
 };
