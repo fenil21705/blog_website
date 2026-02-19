@@ -17,7 +17,8 @@ const BlogEditor = () => {
         title: '',
         content: '',
         excerpt: '',
-        category: 'Technology',
+        category: '',
+        categoryId: '',
         featuredImage: '',
         status: 'draft'
     });
@@ -34,7 +35,11 @@ const BlogEditor = () => {
             const { data } = await axios.get(`${API_URL}/api/categories`);
             setCategories(data);
             if (data.length > 0 && !id) {
-                setFormData(prev => ({ ...prev, category: data[0].name }));
+                setFormData(prev => ({
+                    ...prev,
+                    category: data[0].name,
+                    categoryId: data[0].id
+                }));
             }
         } catch (error) {
             console.error('Error fetching categories:', error);
@@ -50,7 +55,7 @@ const BlogEditor = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setCategories([...categories, data]);
-            setFormData({ ...formData, category: data.name });
+            setFormData({ ...formData, category: data.name, categoryId: data.id });
             setNewCategory('');
             setShowNewCatInput(false);
         } catch (error) {
@@ -71,7 +76,7 @@ const BlogEditor = () => {
             const updatedCats = categories.filter(c => c.id !== catToDelete.id);
             setCategories(updatedCats);
             if (updatedCats.length > 0) {
-                setFormData({ ...formData, category: updatedCats[0].name });
+                setFormData({ ...formData, category: updatedCats[0].name, categoryId: updatedCats[0].id });
             }
         } catch (error) {
             console.error('Error deleting category:', error);
@@ -84,18 +89,40 @@ const BlogEditor = () => {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             const blog = data.find(b => b.id === id);
-            if (blog) setFormData(blog);
+            if (blog) {
+                setFormData({
+                    title: blog.title || '',
+                    content: blog.content || '',
+                    excerpt: blog.excerpt || '',
+                    category: blog.category || '',
+                    categoryId: blog.categoryId || '',
+                    featuredImage: blog.featuredImage || '',
+                    status: blog.status || 'draft'
+                });
+            }
         } catch (error) {
             console.error('Error fetching blog:', error);
         }
     };
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        if (name === 'category') {
+            const selectedCat = categories.find(c => c.name === value);
+            setFormData({
+                ...formData,
+                category: value,
+                categoryId: selectedCat ? selectedCat.id : ''
+            });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
+        if (!file) return;
+
         const formDataUpload = new FormData();
         formDataUpload.append('image', file);
         setUploading(true);
@@ -116,22 +143,29 @@ const BlogEditor = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e, customStatus = null) => {
+        if (e) e.preventDefault();
         setLoading(true);
+
+        const dataToSubmit = {
+            ...formData,
+            status: customStatus || formData.status
+        };
+
         try {
             const config = {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             };
             if (id) {
-                await axios.put(`${API_URL}/api/blogs/${id}`, formData, config);
+                await axios.put(`${API_URL}/api/blogs/${id}`, dataToSubmit, config);
             } else {
-                await axios.post(`${API_URL}/api/blogs`, formData, config);
+                await axios.post(`${API_URL}/api/blogs`, dataToSubmit, config);
             }
-            navigate('/dashboard');
+            navigate('/posts');
         } catch (error) {
             console.error('Error saving blog:', error);
             setLoading(false);
+            alert('Failed to save post. Please check all fields.');
         }
     };
 
@@ -142,12 +176,24 @@ const BlogEditor = () => {
                     <h1 style={{ fontSize: '2rem' }}>{id ? 'Edit Post' : 'Create New Post'}</h1>
                     <p style={{ color: 'var(--text-secondary)' }}>Craft your next story for the world</p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button onClick={() => navigate('/dashboard')} className="btn btn-outline">
+                <div style={{ display: 'flex', gap: '0.8rem' }}>
+                    <button onClick={() => navigate('/posts')} className="btn btn-outline">
                         <X size={18} /> Cancel
                     </button>
-                    <button onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
-                        <Save size={18} /> {loading ? 'Saving...' : 'Save Post'}
+                    <button
+                        onClick={(e) => handleSubmit(e, 'draft')}
+                        className="btn btn-outline"
+                        disabled={loading}
+                        style={{ background: '#fff' }}
+                    >
+                        <Save size={18} /> {loading ? '...' : 'Save as Draft'}
+                    </button>
+                    <button
+                        onClick={(e) => handleSubmit(e, 'published')}
+                        className="btn btn-primary"
+                        disabled={loading}
+                    >
+                        <Send size={18} /> {loading ? 'Saving...' : 'Publish Now'}
                     </button>
                 </div>
             </header>
@@ -181,12 +227,6 @@ const BlogEditor = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                         <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px' }}>
                             <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Publishing Settings</h3>
-
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Status</label>
-                            <select name="status" className="input-field" value={formData.status} onChange={handleChange}>
-                                <option value="draft">Draft</option>
-                                <option value="published">Published</option>
-                            </select>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Category</label>
@@ -264,7 +304,7 @@ const BlogEditor = () => {
                                 }}
                             >
                                 {formData.featuredImage ? (
-                                    <img src={formData.featuredImage.startsWith('/') ? `http://localhost:5000${formData.featuredImage}` : formData.featuredImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Preview" />
+                                    <img src={formData.featuredImage.startsWith('/') ? `${API_URL}${formData.featuredImage}` : formData.featuredImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Preview" />
                                 ) : (
                                     <>
                                         <ImageIcon size={32} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
