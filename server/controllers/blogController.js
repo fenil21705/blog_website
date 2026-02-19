@@ -48,7 +48,7 @@ exports.createBlog = async (req, res) => {
             content,
             excerpt: excerpt || null,
             featuredImage: featuredImage || null,
-            category,
+            category: category || 'General',
             categoryId: categoryId || null,
             status: status || 'draft',
             authorId: req.user.id,

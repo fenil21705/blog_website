@@ -165,7 +165,8 @@ const BlogEditor = () => {
         } catch (error) {
             console.error('Error saving blog:', error);
             setLoading(false);
-            alert('Failed to save post. Please check all fields.');
+            const message = error.response?.data?.message || error.message || 'Check your internet connection';
+            alert(`Error: ${message}`);
         }
     };
 
