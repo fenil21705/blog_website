@@ -26,6 +26,10 @@
         "sqlite3": "^5.1.7"
     },
     "devDependencies": {
-        "concurrently": "^9.1.2"
+        "concurrently": "^9.1.2",
+        "vite": "^7.2.4",
+        "@vitejs/plugin-react": "^4.3.4",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
     }
 }
