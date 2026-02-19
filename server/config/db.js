@@ -2,6 +2,9 @@ const { Sequelize } = require('sequelize');
 const path = require('path');
 require('dotenv').config();
 
+// Failsafe for Self-Signed Certificate errors on Vercel/Supabase
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 // Switching to SQLite for a "no-setup" experience without XAMPP
 // This creates a 'database.sqlite' file in the server directory
 let sequelize;
@@ -9,9 +12,14 @@ let sequelize;
 if (process.env.DATABASE_URL) {
     console.log("Using Supabase/PostgreSQL Database");
 
-    let connectionString = process.env.DATABASE_URL.trim();
+    // Sanitize the URL: remove sslmode=require if it exists to avoid conflicts with dialectOptions
+    let connectionString = process.env.DATABASE_URL.trim().replace('sslmode=require', '');
+    if (connectionString.includes('?')) {
+        connectionString = connectionString.replace(/\?$/, '');
+    } else {
+        connectionString = connectionString;
+    }
 
-    // Standard SSL config for Supabase/Neon
     sequelize = new Sequelize(connectionString, {
         dialect: 'postgres',
         dialectModule: require('pg'),
